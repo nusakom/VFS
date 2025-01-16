@@ -4,6 +4,7 @@
 extern crate alloc;
 #[macro_use]
 extern crate platform;
+
 use alloc::{
     collections::BTreeMap,
     string::{String, ToString},
@@ -40,19 +41,6 @@ pub mod timerfd;
 
 // 导出 KernelFile，使其在其他地方可用
 pub use kfile::KernelFile;
-
-pub mod dev;
-pub mod epoll;
-pub mod eventfd;
-#[cfg(feature = "ext")]
-mod extffi;
-mod initrd;
-pub mod kfile;
-pub mod pipefs;
-pub mod proc;
-pub mod ram;
-pub mod sys;
-pub mod timerfd;
 
 pub static FS: Lazy<Mutex<BTreeMap<String, Arc<dyn VfsFsType>>>> =
     Lazy::new(|| Mutex::new(BTreeMap::new()));
@@ -132,7 +120,6 @@ fn register_all_fs() {
     println!("register fs success");
 }
 
-/// Init the filesystem
 pub fn init_filesystem() -> AlienResult<()> {
     register_all_fs();
     let ramfs_root = ram::init_ramfs(FS.lock().index("ramfs").clone());
@@ -190,13 +177,11 @@ impl core::fmt::Write for VfsOutPut {
     }
 }
 
-/// Get the root filesystem of the system
 #[inline]
 pub fn system_root_fs() -> Arc<dyn VfsDentry> {
     SYSTEM_ROOT_FS.get().unwrap().clone()
 }
 
-/// Get the filesystem by name
 #[inline]
 pub fn system_support_fs(fs_name: &str) -> Option<Arc<dyn VfsFsType>> {
     FS.lock().iter().find_map(|(name, fs)| {
